@@ -13,6 +13,7 @@ public class Supplier {
     ArrayList<String> products;
     Scanner scanner = new Scanner(System.in);
     String exchange_name = "SERVICES";
+    Channel channel;
 
     public Supplier() throws IOException, TimeoutException {
 
@@ -23,12 +24,12 @@ public class Supplier {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost");
         Connection connection = factory.newConnection();
-        Channel channel = connection.createChannel();
+        channel = connection.createChannel();
         channel.exchangeDeclare(exchange_name, BuiltinExchangeType.TOPIC);
 
         products = new ArrayList<>();
         defineItems();
-        registerProducts(channel);
+        registerProducts();
 
     }
 
@@ -40,18 +41,19 @@ public class Supplier {
             if(product.equals("submit")) break;
             products.add(product);
         }
+        System.out.println("List saved successfully");
     }
 
-    private void registerProducts(Channel channel) throws IOException {
+    private void registerProducts() throws IOException {
         for(String product: products){
             channel.queueDeclare(product, false, false, false, null);
             String key = "*." + product;
             channel.queueBind(product, exchange_name, key);
-            getOrders(channel, product);
+            getOrders(product);
         }
     }
 
-    private void getOrders(Channel channel, String queueName) throws IOException {
+    private void getOrders(String queueName) throws IOException {
         Consumer consumer = new DefaultConsumer(channel){
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {

@@ -20,7 +20,7 @@ public class Main {
                     hasRole = true;
                 }
                 case "admin" -> {
-                    System.out.println("Admin");
+                    new Admin();
                     hasRole = true;
                 }
                 default -> System.out.println("Possible roles are: admin, crew or supplier");

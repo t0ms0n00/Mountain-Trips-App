@@ -10,6 +10,7 @@ public class Crew {
     String name;
     Scanner scanner = new Scanner(System.in);
     String exchange_name = "SERVICES";
+    Channel channel;
 
     public Crew() throws IOException, TimeoutException {
 
@@ -20,15 +21,15 @@ public class Crew {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost");
         Connection connection = factory.newConnection();
-        Channel channel = connection.createChannel();
+        channel = connection.createChannel();
         channel.exchangeDeclare(exchange_name, BuiltinExchangeType.TOPIC);
 
-        listenSupplierResponses(channel);
+        listenSupplierResponses();
 
-        makeOrders(channel);
+        makeOrders();
     }
 
-    private void makeOrders(Channel channel) throws IOException {
+    private void makeOrders() throws IOException {
         while(true){
             System.out.println("Put your order here:");
             String requestedItem = scanner.nextLine();
@@ -40,16 +41,15 @@ public class Crew {
         }
     }
 
-    private void listenSupplierResponses(Channel channel) throws IOException {
+    private void listenSupplierResponses() throws IOException {
         String queueName = name+"_orders";
         channel.queueDeclare(queueName, false, false, false, null);
         String key = "order."+name;
         channel.queueBind(queueName, exchange_name, key);
-        System.out.println("Initialize queue for responses from suppliers with name: " + queueName);
-        handleResponse(channel, queueName);
+        handleResponse(queueName);
     }
 
-    private void handleResponse(Channel channel, String queueName) throws IOException {
+    private void handleResponse(String queueName) throws IOException {
         Consumer consumer = new DefaultConsumer(channel) {
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
