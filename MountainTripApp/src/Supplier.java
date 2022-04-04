@@ -30,7 +30,7 @@ public class Supplier {
         products = new ArrayList<>();
         defineItems();
         registerProducts();
-
+        getAdminMessage();
     }
 
     private void defineItems(){
@@ -69,6 +69,20 @@ public class Supplier {
             }
         };
 
+        channel.basicConsume(queueName, true, consumer);
+    }
+
+    private void getAdminMessage() throws IOException {
+        String queueName = "admin_" + name;
+        channel.queueDeclare(queueName, false, false, false, null);
+        channel.queueBind(queueName, exchange_name, "admin.suppliers.#");
+        Consumer consumer = new DefaultConsumer(channel){
+            @Override
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body){
+                String message = new String(body, StandardCharsets.UTF_8);
+                System.out.println("Received: " + message);
+            }
+        };
         channel.basicConsume(queueName, true, consumer);
     }
 

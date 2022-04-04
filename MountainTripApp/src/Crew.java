@@ -25,6 +25,7 @@ public class Crew {
         channel.exchangeDeclare(exchange_name, BuiltinExchangeType.TOPIC);
 
         listenSupplierResponses();
+        listenAdminCommands();
 
         makeOrders();
     }
@@ -33,8 +34,7 @@ public class Crew {
         while(true){
             System.out.println("Put your order here:");
             String requestedItem = scanner.nextLine();
-            if(requestedItem.equals("exit")) break;
-            String key = name + "." + requestedItem.toLowerCase();
+            String key = name + "." + requestedItem;
             String message = name;
             channel.basicPublish(exchange_name, key, null, message.getBytes(StandardCharsets.UTF_8));
             System.out.println("Sent: " + message + " order " + requestedItem);
@@ -49,10 +49,17 @@ public class Crew {
         handleResponse(queueName);
     }
 
+    private void listenAdminCommands() throws IOException {
+        String queueName = "admin_" + name;
+        channel.queueDeclare(queueName, false, false, false, null);
+        channel.queueBind(queueName, exchange_name, "admin.#.crews");
+        handleResponse(queueName);
+    }
+
     private void handleResponse(String queueName) throws IOException {
         Consumer consumer = new DefaultConsumer(channel) {
             @Override
-            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
+            public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body){
                 String message = new String(body, StandardCharsets.UTF_8);
                 System.out.println("Received: " + message);
             }
